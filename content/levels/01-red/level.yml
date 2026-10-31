@@ -1,0 +1,40 @@
+number: 1
+slug: red
+name: The Red Level
+chakra: The root
+colour: "#B3261E"
+centralTheme: >-
+  Inhabiting the body and the earth: being here, in this body, on this ground,
+  and able to sustain a life.
+status: published
+topics:
+  - id: body-senses
+    title: Inhabiting the body and the senses
+    description: Being present in your physical form instead of living in your head or elsewhere, and taking in the world through the senses, enjoying pleasure without possessing it or escaping into it.
+  - id: trust-ground
+    title: Trust in the ground
+    description: Knowing in the body that the earth carries you, before any reason or proof.
+  - id: security-survival
+    title: Security and survival
+    description: Meeting the fear of not having enough without being ruled by it.
+  - id: material-competence
+    title: Material competence
+    description: "Handling money, food, shelter, paperwork and repairs: the basic upkeep of existence."
+  - id: holding-releasing
+    title: Holding and releasing
+    description: Being able to keep what is needed and let go of what is not; to give and to receive.
+  - id: stability-rhythm
+    title: Stability and rhythm
+    description: Keeping a steady structure in daily life that supports without becoming rigid.
+  - id: vital-force-will
+    title: Vital force and will
+    description: Having the strength, stamina and drive to begin things, act and finish them.
+  - id: cycles-mortality
+    title: Acceptance of cycles and mortality
+    description: Accepting rest, ending, decay and death as part of life.
+  - id: belonging-lineage
+    title: Belonging and lineage
+    description: Having a place among people, in your family line and on the land you live on.
+  - id: yes-earthly-life
+    title: Saying yes to earthly life
+    description: Choosing to be here at all, rather than wishing to leave or to live elsewhere.

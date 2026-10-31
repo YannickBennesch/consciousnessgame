@@ -1,0 +1,19 @@
+number: 0
+slug: tutorial
+name: Tutorial
+chakra: null
+colour: "#111111"
+centralTheme: >-
+  Contact with the inner referee: the inner judge, the access each player has
+  to the Divine and to the highest Self.
+status: published
+topics:
+  - id: why
+    title: Why do we play?
+    description: The reason for the game and its premise.
+  - id: how
+    title: How do we play?
+    description: The forms of play, the inner referee, the log and playing together.
+  - id: what
+    title: What do we play?
+    description: The levels, their themes, and the symbols of recognition.

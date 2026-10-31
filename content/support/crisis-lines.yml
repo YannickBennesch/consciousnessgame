@@ -1,0 +1,21 @@
+# Maintained by the admins. VERIFY every number before going live and review it regularly.
+# Shown on the support page and in the support form.
+emergency:
+  label: Emergency services (EU)
+  number: "112"
+lines:
+  - country: Germany
+    name: TelefonSeelsorge
+    number: "0800 111 0 111 / 0800 111 0 222"
+  - country: Austria
+    name: Telefonseelsorge
+    number: "142"
+  - country: Switzerland
+    name: Die Dargebotene Hand
+    number: "143"
+  - country: Spain
+    name: Línea 024
+    number: "024"
+  - country: Portugal
+    name: SNS 24
+    number: "808 24 24 24"

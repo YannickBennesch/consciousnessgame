@@ -1,0 +1,50 @@
+{
+  "name": "consciousness-game",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "db:start": "node scripts/dev-db.mjs",
+    "dev": "next dev",
+    "build": "npm run content:check && next build",
+    "start": "next start",
+    "content:check": "tsx scripts/check-content.ts",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "gray-matter": "4.0.3",
+    "jszip": "3.10.2",
+    "marked": "^18.1.2",
+    "next": "15.5.28",
+    "nodemailer": "^10.3.1",
+    "qrcode": "1.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "stripe": "18.5.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.0",
+    "@types/nodemailer": "7.0.1",
+    "@types/qrcode": "1.5.5",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "embedded-postgres": "17.6.0-beta.15",
+    "prisma": "6.19.3",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "prisma@6.19.3": true,
+    "@embedded-postgres/windows-x64@17.6.0-beta.15": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true
+  }
+}

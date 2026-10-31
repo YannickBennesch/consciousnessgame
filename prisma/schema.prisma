@@ -1,0 +1,450 @@
+// Data model for the platform. See PLATFORM_SPEC.md §14 and docs/DECISIONS.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PLAYER
+  REVIEWER
+  SUPPORT
+  ADMIN
+}
+
+enum Visibility {
+  PRIVATE
+  VISIBLE
+}
+
+enum EntryVisibility {
+  PRIVATE
+  VISIBLE
+}
+
+enum CodeStatus {
+  UNUSED
+  ACTIVATED
+  RETIRED
+}
+
+enum ItemStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  POSTPONED
+  COMPLETE
+}
+
+enum EntryKind {
+  ENTRY
+  EXERCISE_SESSION
+  THRESHOLD_LETTER
+  TRANSITION
+}
+
+enum ThresholdAnswer {
+  YES
+  NOT_YET
+  YES_WITH_CONDITIONS
+}
+
+enum Sharing {
+  PRIVATE
+  CIRCLE
+  PUBLIC
+}
+
+enum QuestKind {
+  CORE
+  COMMUNITY
+}
+
+enum ReviewStatus {
+  NONE
+  ELIGIBLE
+  ACCEPTED
+  DECLINED
+}
+
+enum CoreState {
+  ACTIVE
+  ROTATED
+  RETIRED
+}
+
+enum SupportStatus {
+  OPEN
+  IN_CONVERSATION
+  CLOSED
+}
+
+enum ProductType {
+  TSHIRT
+  SWEATSHIRT
+  PATCH
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  IN_PRODUCTION
+  SHIPPED
+  DELIVERED
+  REFUNDED
+  CANCELLED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  createdAt    DateTime   @default(now())
+  visibility   Visibility @default(PRIVATE)
+  currentLevel Int        @default(0)
+  // The level the player chooses to work in now. Null = currentLevel. Returning is not regression.
+  focusLevel   Int?
+  roles        Role[]     @default([PLAYER])
+  locale       String     @default("en")
+  // Optional coarse location for phase-2 matching. Entered by the player, never derived from IP.
+  region       String?
+  gratitudeReminder Boolean @default(false)
+
+  sessions        Session[]
+  codes           PlayerCode[]
+  privateDetails  PrivateDetails?
+  progress        ItemProgress[]
+  logEntries      LogEntry[]
+  transitions     LevelTransition[]
+  quests          PlayerQuest[]       @relation("QuestAuthor")
+  completions     QuestCompletion[]
+  gratitude       GratitudeNote[]
+  supportRequests SupportRequest[]
+  circleMembers   CircleMember[]
+}
+
+model Session {
+  id        String   @id // sha256 of the cookie token
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
+}
+
+model MagicLink {
+  tokenHash String    @id
+  email     String
+  // Set when the link activates a player code (entry flow §4).
+  code      String?
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  @@index([email])
+}
+
+model RateLimitHit {
+  id  BigInt   @id @default(autoincrement())
+  key String
+  at  DateTime @default(now())
+
+  @@index([key, at])
+}
+
+model CodeBatch {
+  id        String       @id @default(cuid())
+  series    String
+  count     Int
+  note      String?
+  createdAt DateTime     @default(now())
+  codes     PlayerCode[]
+}
+
+model PlayerCode {
+  code        String     @id
+  batchId     String
+  batch       CodeBatch  @relation(fields: [batchId], references: [id])
+  series      String
+  status      CodeStatus @default(UNUSED)
+  activatedAt DateTime?
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Optional: recorded by the admin when packing, for support cases (§11.2).
+  orderId     String?
+  order       Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([batchId])
+  @@index([userId])
+}
+
+model PrivateDetails {
+  userId     String  @id
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // AES-256-GCM ciphertexts (base64). Never shown outside the player's own settings.
+  birthDate  String?
+  birthTime  String?
+  birthPlace String?
+}
+
+model ItemProgress {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // "core:<level-slug>/<item-slug>" or "player:<PlayerQuest.id>"
+  itemRef     String
+  status      ItemStatus @default(NOT_STARTED)
+  stagesDone  Int[]      @default([])
+  postponedAt DateTime?
+  completedAt DateTime?
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([userId, itemRef])
+}
+
+model LogEntry {
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind            EntryKind        @default(ENTRY)
+  date            DateTime         @default(now())
+  itemRef         String?
+  itemTitle       String?
+  form            String?
+  level           Int
+  topicIds        String[]         @default([])
+  did             String           @default("")
+  changed         String           @default("")
+  refereeSaid     String           @default("")
+  thresholdAnswer ThresholdAnswer?
+  visibility      EntryVisibility  @default(PRIVATE)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  revisions       LogRevision[]
+
+  @@index([userId, level])
+}
+
+model LogRevision {
+  id        String   @id @default(cuid())
+  entryId   String
+  entry     LogEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  snapshot  Json
+  createdAt DateTime @default(now())
+
+  @@index([entryId])
+}
+
+model LevelTransition {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromLevel          Int
+  toLevel            Int
+  at                 DateTime @default(now())
+  conditionsSnapshot Json
+
+  @@index([userId])
+}
+
+model PlayerQuest {
+  id             String       @id @default(cuid())
+  authorId       String?
+  author         User?        @relation("QuestAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  title          String
+  level          Int
+  topicIds       String[]     @default([])
+  form           String
+  duration       String
+  description    String
+  stages         String[]     @default([])
+  completeWhen   String
+  sharing        Sharing      @default(PRIVATE)
+  sharedPublicAt DateTime?
+  kind           QuestKind    @default(COMMUNITY)
+  testedAt       DateTime?
+  reviewStatus   ReviewStatus @default(NONE)
+  reviewedAt     DateTime?
+  coreState      CoreState    @default(ACTIVE)
+  coreGroup      String?
+  creditAuthor   Boolean      @default(false)
+  sensitive      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  completions    QuestCompletion[]
+
+  @@index([sharing, kind])
+}
+
+model QuestCompletion {
+  id               String      @id @default(cuid())
+  questId          String
+  quest            PlayerQuest @relation(fields: [questId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  circleId         String?
+  changedConfirmed Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+
+  @@unique([questId, userId])
+}
+
+model GratitudeNote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @default(now())
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model SupportRequest {
+  id        String        @id @default(cuid())
+  // Null for visitors (they leave a replyTo address). Deleted with the player's account.
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  replyTo   String?
+  itemRef   String?
+  message   String
+  status    SupportStatus @default(OPEN)
+  createdAt DateTime      @default(now())
+}
+
+model Setting {
+  key   String @id
+  value Json
+}
+
+// ---------- Shop ----------
+
+model Product {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  name        String
+  type        ProductType
+  series      String
+  description String
+  // Products of type PATCH exist in the model (O-2) but are not listed unless `listed` is set.
+  listed      Boolean     @default(true)
+  comingSoon  Boolean     @default(false)
+  imagePath   String?
+  imageAlt    String?
+  variants    Variant[]
+}
+
+model Variant {
+  id         String      @id @default(cuid())
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size       String
+  cut        String?
+  priceCents Int
+  currency   String      @default("eur")
+  active     Boolean     @default(true)
+  orderItems OrderItem[]
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  stripeSessionId String?     @unique
+  paymentIntentId String?
+  email          String?
+  status          OrderStatus @default(PENDING)
+  totalCents      Int         @default(0)
+  currency        String      @default("eur")
+  shippingName    String?
+  shippingAddress Json?
+  trackingNumber  String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  items           OrderItem[]
+  codes           PlayerCode[]
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId  String
+  variant    Variant @relation(fields: [variantId], references: [id])
+  quantity   Int
+  priceCents Int
+}
+
+// ---------- Phase 2 (modelled now, no UI yet) ----------
+
+model Pair {
+  id        String   @id @default(cuid())
+  userAId   String
+  userBId   String
+  level     Int
+  createdAt DateTime @default(now())
+
+  @@unique([userAId, userBId, level])
+}
+
+model Circle {
+  id        String         @id @default(cuid())
+  name      String
+  level     Int
+  region    String?
+  notes     String?
+  createdAt DateTime       @default(now())
+  members   CircleMember[]
+}
+
+model CircleMember {
+  circleId String
+  circle   Circle   @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@id([circleId, userId])
+}
+
+model Catalyst {
+  id            String          @id @default(cuid())
+  name          String
+  description   String
+  qualification String?
+  approved      Boolean         @default(false)
+  offers        CatalystOffer[]
+}
+
+model CatalystOffer {
+  id           String   @id @default(cuid())
+  catalystId   String
+  catalyst     Catalyst @relation(fields: [catalystId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  level        Int
+  topicId      String
+  touchesHealth Boolean @default(false)
+}
+
+model Gathering {
+  id            String         @id @default(cuid())
+  hostId        String
+  date          DateTime
+  placeType     String
+  area          String
+  address       String?
+  capacity      Int
+  flow          String
+  registrations Registration[]
+}
+
+model Registration {
+  gatheringId String
+  gathering   Gathering @relation(fields: [gatheringId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime  @default(now())
+
+  @@id([gatheringId, userId])
+}

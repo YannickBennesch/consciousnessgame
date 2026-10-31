@@ -1,0 +1,36 @@
+{
+  "site": {
+    "title": "The Consciousness Development Game",
+    "skip": "Skip to content",
+    "nav.docs": "About the game",
+    "nav.shop": "Shop",
+    "nav.play": "Enter the game",
+    "nav.profile": "My profile",
+    "nav.signin": "Sign in",
+    "nav.support": "Support",
+    "footer.imprint": "Imprint",
+    "footer.privacy": "Privacy",
+    "footer.terms": "Shop terms",
+    "footer.disclaimer": "The game is not therapy, not medical advice, and makes no promise of healing."
+  },
+  "profile": {
+    "nav.home": "Home",
+    "nav.tutorial": "Tutorial",
+    "nav.levels": "Levels",
+    "nav.log": "Player log",
+    "nav.topics": "Topic map",
+    "nav.quests": "My quests",
+    "nav.community": "Other players",
+    "nav.gratitude": "Gratitude",
+    "nav.settings": "Settings",
+    "nav.support": "Support",
+    "nav.admin": "Admin",
+    "signout": "Sign out"
+  },
+  "status": {
+    "NOT_STARTED": "Not started",
+    "IN_PROGRESS": "In progress",
+    "POSTPONED": "Postponed",
+    "COMPLETE": "Complete"
+  }
+}
